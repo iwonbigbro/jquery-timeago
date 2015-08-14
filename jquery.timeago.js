@@ -42,6 +42,7 @@
       allowPast: true,
       allowFuture: false,
       localeTitle: false,
+      titleAttr: "title",
       cutoff: 0,
       strings: {
         prefixAgo: null,
@@ -123,7 +124,10 @@
       return new Date(s);
     },
     datetime: function(elem) {
-      var iso8601 = $t.isTime(elem) ? $(elem).attr("datetime") : $(elem).attr("title");
+      var iso8601 = $t.isTime(elem) ?
+            $(elem).attr("datetime") :
+            $(elem).attr($t.settings.titleAttr);
+
       return $t.parse(iso8601);
     },
     isTime: function(elem) {
@@ -147,11 +151,22 @@
     update: function(time){
       var parsedTime = $t.parse(time);
       $(this).data('timeago', { datetime: parsedTime });
-      if($t.settings.localeTitle) $(this).attr("title", parsedTime.toLocaleString());
+
+      if($t.settings.localeTitle) {
+        $(this).attr($t.settings.titleAttr, parsedTime.toLocaleString());
+      }
+
       refresh.apply(this);
     },
     updateFromDOM: function(){
-      $(this).data('timeago', { datetime: $t.parse( $t.isTime(this) ? $(this).attr("datetime") : $(this).attr("title") ) });
+      $(this).data('timeago', {
+          datetime: $t.parse(
+            $t.isTime(this) ?
+              $(this).attr("datetime") :
+              $(this).attr($s.settings.titleAttr)
+          )
+      });
+
       refresh.apply(this);
     },
     dispose: function () {
@@ -186,7 +201,7 @@
     var $s = $t.settings;
 
     if (!isNaN(data.datetime)) {
-      if ( $s.cutoff == 0 || Math.abs(distance(data.datetime)) < $s.cutoff) {
+      if ( $s.cutoff === 0 || Math.abs(distance(data.datetime)) < $s.cutoff) {
         $(this).text(inWords(data.datetime));
       }
     }
@@ -194,16 +209,24 @@
   }
 
   function prepareData(element) {
+    var text;
+
     element = $(element);
+
     if (!element.data("timeago")) {
       element.data("timeago", { datetime: $t.datetime(element) });
-      var text = $.trim(element.text());
+
       if ($t.settings.localeTitle) {
-        element.attr("title", element.data('timeago').datetime.toLocaleString());
-      } else if (text.length > 0 && !($t.isTime(element) && element.attr("title"))) {
-        element.attr("title", text);
+        text = element.data('timeago').datetime.toLocaleString();
+      } else if (! ($t.isTime(element) && element.attr($t.settings.titleAttr))) {
+        text = $.trim(element.text());
+      }
+
+      if (text) {
+        element.attr($t.settings.titleAttr, text);
       }
     }
+
     return element.data("timeago");
   }
 
